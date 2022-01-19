@@ -49,9 +49,15 @@ class HistoryView(generics.ListAPIView):
     """
     Returns queries made by current user.
     """
-    queryset = UserRequestHistory.objects.all()
+
     serializer_class = UserRequestHistorySerializer
-    # TODO: Filter the queryset so that we get the records for the user making the request.
+   
+    def get(self, request, *args, **kwargs):
+        
+        user_id = request.user.id
+        AllStockHistory = UserRequestHistory.objects.all().filter(user_id=user_id)[::-1]
+        serializer = self.serializer_class(AllStockHistory, many=True)
+        return Response(serializer.data)
 
 
 class StatsView(APIView):

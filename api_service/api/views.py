@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from api.models import UserRequestHistory
 from api.serializers import UserRequestHistorySerializer
-
+from django.db.models import Count
 import requests
 
 API_STOCK_URL="http://127.0.0.1:7000/"
@@ -64,7 +64,28 @@ class StatsView(APIView):
     """
     Allows super users to see which are the most queried stocks.
     """
-    # TODO: Implement the query needed to get the top-5 stocks as described in the README, and return
-    # the results to the user.
+    
     def get(self, request, *args, **kwargs):
-        return Response()
+
+    
+        def Convert_list_to_dict(lst):
+            dict_respuestas=[]
+            for i in range(0,len(lst)):
+                dict_respuestas.append({"stock": lst[i][0], "times_requested" : lst[i][1]})
+            return dict_respuestas
+           
+
+        if request.user.is_superuser:
+
+            StockStats=Convert_list_to_dict(
+                list(
+                    UserRequestHistory.objects
+                    .values_list('symbol')
+                    .annotate(count=Count('symbol'))
+                    .order_by('-count')[:5]
+                    )
+            ) 
+                  
+            return Response(StockStats, status=200)
+
+        return Response({"Denied": " access denied to this endpoint"}, status=401)    
